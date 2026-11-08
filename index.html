@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101010">
+    <meta name="description" content="Gerencie sua ficha de Ordem 2: perfil, atributos, perícias, PV e PD.">
+    <title>Fatum — Ordem Paranormal 2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <a class="brand-main" href="#" aria-label="Fatum, início">
+            <span class="brand-mark">F</span>
+            <span class="brand-name">fatum<span>.</span></span>
+          </a>
+          <div class="brand-caption"><span>nem todo destino foi escrito pelos deuses</span><span class="brand-signature">DvH</span></div>
+        </div>
+
+        <div class="workspace-label">ESPAÇO DE JOGO</div>
+        <button class="campaign-switcher" type="button">
+          <span class="campaign-icon">⌖</span>
+          <span class="campaign-copy"><strong>Operação Eclipse</strong><small>Campanha · 4 agentes</small></span>
+          <span class="switcher-chevron">⌄</span>
+        </button>
+
+        <div class="nav-label">MENU</div>
+        <nav class="main-nav" aria-label="Navegação principal">
+          <button class="nav-item active" data-view="sheet"><span class="nav-icon">▤</span> Ficha de personagem</button>
+          <button class="nav-item" data-view="inventory"><span class="nav-icon">▣</span> Inventário <span class="nav-count" id="inventory-count">0</span></button>
+          <button class="nav-item" data-view="abilities"><span class="nav-icon">✳</span> Habilidades</button>
+          <button class="nav-item" data-view="notes"><span class="nav-icon">☷</span> Anotações</button>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="sync-status"><span class="status-dot"></span> Ficha salva neste dispositivo</div>
+          <button class="profile-button" type="button">
+            <span class="profile-avatar">G</span>
+            <span><strong>Gabriel</strong><small>Jogador</small></span>
+            <span class="profile-more">···</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <button class="mobile-menu" id="mobile-menu" aria-label="Abrir menu">☰</button>
+          <div class="breadcrumbs"><span>Operação Eclipse</span><span class="crumb-slash">/</span><strong>Personagens</strong></div>
+          <div class="topbar-actions">
+            <span class="autosave"><i></i> Salvamento automático</span>
+            <button class="icon-button" id="help-button" aria-label="Ajuda">?</button>
+            <button class="button button-outline" id="share-button"><span>↗</span> Compartilhar</button>
+          </div>
+        </header>
+
+        <div class="content">
+          <div id="sheet-view">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> FICHA DE PERSONAGEM · ORDEM 2 <span class="record-id">Nº 0471</span></div>
+              <h1 id="character-title">A ficha do agente</h1>
+              <p class="page-subtitle">Perfil, atributos e perícias — do jeito de Ordem 2.</p>
+            </div>
+            <button class="button button-primary" id="edit-button"><span>✎</span> Editar personagem</button>
+          </div>
+
+          <section class="character-card">
+            <div class="character-art">
+              <div class="art-grain"></div>
+              <div class="art-rings"></div>
+              <div class="art-symbol">F</div>
+              <div class="art-caption">O OUTRO LADO<br>OBSERVA</div>
+              <span class="art-coordinate">23°32'51.1"S<br>46°38'10.3"W</span>
+            </div>
+            <div class="character-info">
+              <div class="character-meta"><span class="pill pill-red" id="profile-pill"><i></i> ANALISTA</span><span class="character-code">AGENTE · <b id="agent-code">0471</b></span></div>
+              <h2 id="character-name">Helena Duarte</h2>
+              <p class="character-concept" id="character-concept">Investigadora que sabe demais</p>
+              <div class="character-divider"></div>
+              <div class="identity-grid">
+                <div><span>PERFIL</span><strong id="character-profile">Analista</strong></div>
+                <div><span>OCUPAÇÃO</span><strong id="character-occupation">Pesquisadora</strong></div>
+                <div><span>CONCEITO</span><strong id="character-concept">Pesquisadora de fenômenos</strong></div>
+              </div>
+            </div>
+            <div class="level-card"><span>NÍVEL</span><strong id="level-number">2</strong><span class="level-caption">Ordem 2 · Playtest</span></div>
+          </section>
+
+          <div class="section-tabs" role="tablist" aria-label="Seções da ficha">
+            <button class="section-tab active" data-tab="overview">Visão geral</button>
+            <button class="section-tab" data-tab="attributes">Atributos</button>
+            <button class="section-tab" data-tab="combat">Combate</button>
+            <button class="section-tab" data-tab="inventory">Inventário</button>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="panel vital-panel">
+              <div class="panel-heading">
+                <div><span class="section-kicker">CONDIÇÃO DO AGENTE</span><h3>Estado vital</h3></div>
+                <div class="level-points-control">
+                  <span><strong id="available-level-points">6</strong> pontos disponíveis</span>
+                  <button class="more-button edit-points-button" id="edit-vital-allocation" type="button" aria-label="Distribuir pontos de PV e PD" title="Distribuir pontos de PV e PD">✎</button>
+                </div>
+              </div>
+              <div class="vital-stats">
+                <div class="vital-stat health">
+                  <div class="stat-icon">♥</div><div class="stat-label">PONTOS DE VIDA</div>
+                  <div class="stat-values"><strong id="hp-value">42</strong><span>/ <span id="hp-max">42</span></span></div>
+                  <div class="meter"><i id="hp-meter"></i></div>
+                  <div class="stat-note"><span class="live-dot"></span><span id="hp-base-note">Base 6</span></div>
+                </div>
+                <div class="vital-stat determination">
+                  <div class="stat-icon">◉</div><div class="stat-label">PONTOS DE DETERMINAÇÃO</div>
+                  <div class="stat-values"><strong id="pd-value">14</strong><span>/ <span id="pd-max">14</span></span></div>
+                  <div class="meter"><i id="pd-meter"></i></div>
+                  <div class="stat-note"><span id="pd-base-note">Base 8</span></div>
+                </div>
+                <div class="vital-stat effort">
+                  <div class="stat-icon">ϟ</div><div class="stat-label">DT PADRÃO</div>
+                  <div class="stat-values"><strong>7</strong><span>no playtest</span></div>
+                  <div class="stat-note">Atributo + perícia</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel attributes-panel">
+              <div class="panel-heading">
+                <div><span class="section-kicker">DADOS-BASE</span><h3>Atributos</h3></div>
+                <button class="text-button" data-tab-link="attributes">Ver ficha <span>↗</span></button>
+              </div>
+              <div class="attribute-list" id="attribute-list"></div>
+            </section>
+
+            <section class="panel ability-panel" id="ability-panel" aria-labelledby="ability-title">
+              <div class="panel-heading">
+                <div><span class="section-kicker">HABILIDADE PRINCIPAL</span><h3 id="ability-title"></h3></div>
+              </div>
+              <p class="ability-description" id="ability-description"></p>
+              <div class="impetus-control" id="impetus-control" hidden>
+                <div><strong>Ímpeto</strong><small>Ganhe 1 ao falhar, até 3. Ajuste ou gaste os pontos manualmente.</small></div>
+                <div class="point-adjust">
+                  <button type="button" id="impetus-remove" aria-label="Remover 1 ponto de Ímpeto">−</button>
+                  <strong id="impetus-value" role="status" aria-label="Pontos de Ímpeto">0 / 3</strong>
+                  <button type="button" id="impetus-add" aria-label="Adicionar 1 ponto de Ímpeto">+</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel skills-panel">
+              <div class="panel-heading">
+                <div><span class="section-kicker">20 PERÍCIAS</span><h3>Perícias</h3></div>
+                <label class="skill-dt" for="roll-dt">DT <input id="roll-dt" type="number" min="1" step="1" value="7" required></label>
+              </div>
+              <p class="skill-hint">Clique no nome para rolar. Os dados podem ser ajustados para o teste sem alterar a ficha.</p>
+              <div class="skill-list" id="skill-list"></div>
+            </section>
+
+            <section class="panel inventory-preview">
+              <div class="panel-heading">
+                <div><span class="section-kicker">EQUIPAMENTO</span><h3>Itens carregados</h3></div>
+                <button class="text-button" data-tab-link="inventory">Inventário <span>↗</span></button>
+              </div>
+              <div id="inventory-preview-list"></div>
+              <button class="add-item-button" id="add-item-button"><span>＋</span> Adicionar equipamento</button>
+            </section>
+          </div>
+          </div>
+          <section class="panel notes-panel" id="notes-panel" aria-labelledby="notes-title" hidden>
+              <div class="panel-heading">
+                <div><span class="section-kicker">REGISTROS DO AGENTE</span><h3 id="notes-title">Anotações</h3></div>
+                <span class="notes-status" id="notes-status" role="status">Salvas neste dispositivo</span>
+              </div>
+              <div class="notes-fields">
+                <label for="character-history">Histórico do personagem
+                  <textarea id="character-history" rows="8" placeholder="Registre a história, origens e acontecimentos importantes do personagem."></textarea>
+                </label>
+                <label for="character-notes">Anotações gerais
+                  <textarea id="character-notes" rows="8" placeholder="Registre pistas, informações da campanha e outras anotações."></textarea>
+                </label>
+              </div>
+          </section>
+          <footer class="footer-note"><span>FATUM · FICHA DE ORDEM 2</span><span>BASEADO NO PLAYTEST <b>●</b></span></footer>
+        </div>
+      </main>
+    </div>
+
+    <dialog id="character-dialog" class="modal">
+      <form method="dialog" id="character-form">
+        <div class="modal-heading"><div><span class="section-kicker">FICHA DE ORDEM 2</span><h2>Editar personagem</h2></div><button class="modal-close" aria-label="Fechar" value="cancel">×</button></div>
+        <div class="form-grid">
+          <label>Nome do personagem<input name="name" required maxlength="40"></label>
+          <label>Conceito<input name="concept" maxlength="60"></label>
+          <label>Perfil<select name="profile"><option>Executor</option><option>Analista</option><option>Vigilante</option></select></label>
+          <label>Ocupação<input name="occupation" maxlength="32"></label>
+          <label>Nível<input name="level" type="number" min="1" step="1" required></label>
+          <label>Atributo físico<select name="physical"><option value="4">d4</option><option value="6">d6</option><option value="8">d8</option><option value="10">d10</option><option value="12">d12</option></select></label>
+          <label>Atributo mental<select name="mental"><option value="4">d4</option><option value="6">d6</option><option value="8">d8</option><option value="10">d10</option><option value="12">d12</option></select></label>
+          <label>Atributo emocional<select name="emotional"><option value="4">d4</option><option value="6">d6</option><option value="8">d8</option><option value="10">d10</option><option value="12">d12</option></select></label>
+          <label>PV atual<input name="hp" type="number" min="0" step="1" required></label>
+          <label>PD atual<input name="pd" type="number" min="0" step="1" required></label>
+        </div>
+        <p id="level-up-summary" class="level-up-summary" role="status"></p>
+        <p class="level-up-summary">Ao alterar Físico ou Emoção, o respectivo valor atual é ajustado para o novo máximo. Você pode editá-lo depois.</p>
+        <details class="skill-settings">
+          <summary>Editar dados e atributos-base das perícias</summary>
+          <p>O teste combina o dado do atributo-base com o dado da perícia.</p>
+          <div class="skill-editor-list" id="skill-editor-list"></div>
+        </details>
+        <div class="modal-actions"><button class="button button-outline" value="cancel">Cancelar</button><button class="button button-primary" id="save-character" value="save">Salvar ficha</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="vital-allocation-dialog" class="modal modal-small">
+      <form method="dialog" id="vital-allocation-form">
+        <div class="modal-heading"><div><span class="section-kicker">PROGRESSÃO DE NÍVEL</span><h2>Distribuir pontos</h2></div><button class="modal-close" aria-label="Fechar" value="cancel">×</button></div>
+        <p class="allocation-intro">Nível <strong id="allocation-level">2</strong> · cada nível acima do 1º concede 6 pontos para PV e PD.</p>
+        <div class="vital-allocation-row">
+          <div><strong>Vida (PV)</strong><small>Base: Físico d<span id="allocation-physical-base">6</span> · máximo: <span id="allocation-hp-max">6</span></small></div>
+          <div class="point-adjust">
+            <button type="button" id="allocation-hp-remove" aria-label="Remover 1 ponto de vida">−</button>
+            <strong id="allocation-hp-points">0</strong>
+            <button type="button" id="allocation-hp-add" aria-label="Adicionar 1 ponto de vida">+</button>
+          </div>
+        </div>
+        <div class="vital-allocation-row">
+          <div><strong>Determinação (PD)</strong><small>Base: Emoção d<span id="allocation-emotional-base">8</span> · máximo: <span id="allocation-pd-max">8</span></small></div>
+          <div class="point-adjust">
+            <button type="button" id="allocation-pd-remove" aria-label="Remover 1 ponto de determinação">−</button>
+            <strong id="allocation-pd-points">0</strong>
+            <button type="button" id="allocation-pd-add" aria-label="Adicionar 1 ponto de determinação">+</button>
+          </div>
+        </div>
+        <p class="allocation-remaining">Pontos restantes: <strong id="allocation-remaining">6</strong></p>
+        <div class="modal-actions"><button class="button button-outline" value="cancel">Cancelar</button><button class="button button-primary" id="vital-allocation-save" value="save">Salvar distribuição</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="item-dialog" class="modal modal-small">
+      <form method="dialog" id="item-form">
+        <div class="modal-heading"><div><span class="section-kicker">EQUIPAMENTO</span><h2>Novo item</h2></div><button class="modal-close" aria-label="Fechar" value="cancel">×</button></div>
+        <label>Nome do item<input name="item" required maxlength="48" placeholder="Ex.: Lanterna tática"></label>
+        <label>Categoria<select name="category"><option>Equipamento</option><option>Arma</option><option>Proteção</option><option>Consumível</option></select></label>
+        <div class="modal-actions"><button class="button button-outline" value="cancel">Cancelar</button><button class="button button-primary" value="save">Adicionar item</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="aptitude-dialog" class="modal modal-small" aria-labelledby="aptitude-title">
+      <form method="dialog" id="aptitude-form">
+        <div class="modal-heading"><div><span class="section-kicker">PERÍCIA</span><h2 id="aptitude-title">Campo de Aptidão</h2></div><button class="modal-close" aria-label="Fechar" value="cancel" formnovalidate>×</button></div>
+        <label for="aptitude-select">Escolha um campo de conhecimento<select id="aptitude-select"><option value="">Nenhum campo selecionado</option></select></label>
+        <div class="modal-actions"><button class="button button-outline" value="cancel" formnovalidate>Cancelar</button><button class="button button-primary" value="save">Salvar</button></div>
+      </form>
+    </dialog>
+    <dialog id="aptitude-info-dialog" class="modal" aria-labelledby="aptitude-info-title">
+      <form method="dialog">
+        <div class="modal-heading"><div><span class="section-kicker">PERÍCIA · MENTE</span><h2 id="aptitude-info-title">Campos de Aptidão</h2></div><button class="modal-close" aria-label="Fechar">×</button></div>
+        <p class="aptitude-intro">Aptidão representa conhecimento em um campo específico.</p>
+        <dl class="aptitude-definitions" id="aptitude-definitions"></dl>
+        <div class="modal-actions"><button class="button button-primary">Entendi</button></div>
+      </form>
+    </dialog>
+    <dialog id="message-dialog" class="modal modal-small">
+      <form method="dialog"><div class="modal-heading"><div><span class="section-kicker">FATUM · ARQUIVO</span><h2 id="message-title">Aviso</h2></div><button class="modal-close" aria-label="Fechar">×</button></div><p id="message-text" class="message-copy"></p><div class="modal-actions"><button class="button button-primary">Entendi</button></div></form>
+    </dialog>
+    <dialog id="roll-dialog" class="modal modal-small" aria-labelledby="roll-title">
+      <form method="dialog"><div class="modal-heading"><div><span class="section-kicker">RESULTADO DO TESTE</span><h2 id="roll-title">Rolagem</h2></div><button class="modal-close" aria-label="Fechar">×</button></div><p id="roll-result" class="roll-result" aria-live="polite"></p><div class="modal-actions"><button class="button button-primary">Entendi</button></div></form>
+    </dialog>
+    <script src="app.js"></script>
+  </body>
+</html>
