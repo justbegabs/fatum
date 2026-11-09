@@ -991,8 +991,8 @@ byId("help-button").addEventListener("click", () => {
 });
 
 function renderCampaignList() {
-  const canDelete = store.campaigns.length > 1;
   byId("campaign-list").innerHTML = store.campaigns.map((campaign) => {
+    const canDelete = store.campaigns.length > 1 || !isMasterOf(campaign);
     const isActive = campaign.id === store.activeCampaignId;
     const meta = [pluralize(campaign.characters.length, "agente", "agentes"), campaign.masterName && `Mestre: ${campaign.masterName}`].filter(Boolean).join(" · ");
     const role = campaign.role ? `<span class="campaign-role">${campaign.role === "player" ? "JOGADOR" : "MESTRE"}</span>` : "";
@@ -1016,15 +1016,18 @@ byId("campaign-list").addEventListener("click", (event) => {
     return;
   }
   const remove = event.target.closest("[data-delete-campaign]");
-  if (!remove || store.campaigns.length <= 1) return;
+  if (!remove) return;
   const campaign = store.campaigns.find(({ id }) => id === remove.dataset.deleteCampaign);
-  if (!campaign) return;
+  if (!campaign || (store.campaigns.length <= 1 && isMasterOf(campaign))) return;
   const question = isMasterOf(campaign)
     ? `Excluir a campanha "${campaign.name}" com todas as suas fichas? Esta ação não pode ser desfeita.`
     : `Sair da campanha "${campaign.name}"? Sua ficha continua com o mestre.`;
   if (!confirm(question)) return;
   saveStore();
   store.campaigns = store.campaigns.filter(({ id }) => id !== campaign.id);
+  if (!store.campaigns.length) {
+    store.campaigns.push(normalizeCampaign({ name: "Minha campanha", masterName: authUser?.displayName ?? "", characters: [] }));
+  }
   if (store.activeCampaignId === campaign.id) {
     store.activeCampaignId = store.campaigns[0].id;
     syncActiveCharacter();
