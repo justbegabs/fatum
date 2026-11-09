@@ -1294,6 +1294,15 @@ byId("threat-form").querySelectorAll("input").forEach((input) => {
   input.addEventListener("input", () => input.setCustomValidity(""));
 });
 
+window.addEventListener("storage", (event) => {
+  if (event.key !== CAMPAIGNS_KEY || event.newValue === null) return;
+  const activeCampaignId = store.activeCampaignId;
+  store = loadStore();
+  if (store.campaigns.some(({ id }) => id === activeCampaignId)) store.activeCampaignId = activeCampaignId;
+  syncActiveCharacter();
+  renderApp();
+});
+
 byId("mobile-menu").addEventListener("click", () => byId("sidebar").classList.toggle("open"));
 document.querySelector(".campaign-switcher").addEventListener("click", () => {
   renderCampaignList();
