@@ -639,7 +639,10 @@ function renderCampaignChrome() {
 }
 
 function renderActiveCharacter() {
-  if (!character) return;
+  if (!character) {
+    byId("inventory-count").textContent = 0;
+    return;
+  }
   renderCharacter();
   renderAttributes();
   byId("character-history").value = character.history;
