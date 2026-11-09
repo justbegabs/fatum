@@ -1104,7 +1104,9 @@ byId("import-campaign-input").addEventListener("change", async (event) => {
   const data = await readJsonFile(event.currentTarget);
   if (!data) return;
   try {
-    const campaign = normalizeCampaign(data.format === "fatum-ordem2-campaign" ? data.campaign : data);
+    const isCampaign = data.format === "fatum-ordem2-campaign" || (!data.format && Array.isArray(data.characters));
+    if (!isCampaign) throw new TypeError("O arquivo não é uma campanha exportada.");
+    const campaign = normalizeCampaign(data.format ? data.campaign : data);
     if (store.campaigns.some(({ id }) => id === campaign.id)) {
       campaign.id = createId("campaign");
       campaign.name = `${campaign.name} (cópia)`;
@@ -1131,7 +1133,9 @@ byId("import-character-input").addEventListener("change", async (event) => {
   if (!data) return;
   let imported;
   try {
-    imported = normalizeCharacter(data.format === "fatum-ordem2-character" ? data.character : data);
+    const isCharacter = data.format === "fatum-ordem2-character" || (!data.format && typeof data.name === "string" && data.attributes);
+    if (!isCharacter) throw new TypeError("O arquivo não é uma ficha exportada.");
+    imported = normalizeCharacter(data.format ? data.character : data);
   } catch (error) {
     console.error("Não foi possível importar a ficha.", error);
     openMessage("Não foi possível importar", "O arquivo não contém uma ficha de personagem válida.");
