@@ -263,6 +263,15 @@ h1 { font-size: 28px; letter-spacing: -.8px; font-weight: 600; }
 .button-danger:hover { background: #2a1820; }
 .modal textarea { width: 100%; min-width: 0; resize: vertical; padding: 10px; border: 1px solid #343434; border-radius: 4px; background: #121212; color: #e6dfee; outline: none; font-size: 11px; line-height: 1.5; }
 .modal textarea:focus { border-color: #7848a8; }
+body.is-home .sidebar-context, #home-view[hidden], .home-card[hidden] { display: none; }
+.sidebar .home-nav { margin: 0 0 20px; }
+.home-lead { max-width: 540px; margin-top: 10px; color: #929292; font-size: 12px; line-height: 1.6; }
+.home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.home-card { display: grid; align-content: start; justify-items: start; gap: 8px; padding: 26px 22px; border: 1px solid #2c2c2c; border-radius: 7px; background: var(--panel); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.home-card:hover, .home-card:focus-visible { border-color: #744b9d; background: #1b1621; }
+.home-card-icon { display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 6px; border-radius: 6px; background: #291e35; color: #c7aee1; font-size: 17px; }
+.home-card strong { font: 600 17px "Space Grotesk", sans-serif; }
+.home-card span:last-child { color: #929292; font-size: 11px; line-height: 1.55; }
 .empty-sheet-panel { display: grid; justify-items: start; gap: 8px; padding: 28px; }
 .empty-sheet-panel[hidden], #master-view[hidden] { display: none; }
 .empty-sheet-panel h3 { font-size: 18px; }

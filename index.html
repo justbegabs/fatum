@@ -22,6 +22,10 @@
           <div class="brand-caption"><span>nem todo destino foi escrito pelos deuses</span><span class="brand-signature">DvH</span></div>
         </div>
 
+        <nav class="main-nav home-nav" aria-label="Início">
+          <button class="nav-item" data-view="home"><span class="nav-icon">⌂</span> Início</button>
+        </nav>
+
         <div class="workspace-label">ESPAÇO DE JOGO</div>
         <button class="campaign-switcher" type="button">
           <span class="campaign-icon">⌖</span>
@@ -29,17 +33,17 @@
           <span class="switcher-chevron">⌄</span>
         </button>
 
-        <div class="nav-label" id="master-nav-label">MESTRE</div>
-        <nav class="main-nav master-nav" id="master-nav" aria-label="Navegação do mestre">
+        <div class="nav-label sidebar-context" id="master-nav-label">MESTRE</div>
+        <nav class="main-nav master-nav sidebar-context" id="master-nav" aria-label="Navegação do mestre">
           <button class="nav-item" data-view="master"><span class="nav-icon">◈</span> Ficha do mestre <span class="nav-count" id="threat-count">0</span></button>
         </nav>
 
-        <div class="nav-label" id="agent-nav-label">FICHAS DOS JOGADORES</div>
-        <div class="agent-nav" id="agent-nav" aria-label="Fichas dos jogadores"></div>
-        <button class="add-agent-button" id="add-agent-button" type="button"><span>+</span> Nova ficha de jogador</button>
+        <div class="nav-label sidebar-context" id="agent-nav-label">FICHAS DOS JOGADORES</div>
+        <div class="agent-nav sidebar-context" id="agent-nav" aria-label="Fichas dos jogadores"></div>
+        <button class="add-agent-button sidebar-context" id="add-agent-button" type="button"><span>+</span> Nova ficha de jogador</button>
 
-        <div class="nav-label">MENU DA FICHA</div>
-        <nav class="main-nav" aria-label="Navegação da ficha">
+        <div class="nav-label sidebar-context">MENU DA FICHA</div>
+        <nav class="main-nav sidebar-context" aria-label="Navegação da ficha">
           <button class="nav-item active" data-view="sheet"><span class="nav-icon">▤</span> Ficha de personagem</button>
           <button class="nav-item" data-view="inventory"><span class="nav-icon">▣</span> Inventário <span class="nav-count" id="inventory-count">0</span></button>
           <button class="nav-item" data-view="abilities"><span class="nav-icon">✳</span> Habilidades</button>
@@ -68,6 +72,20 @@
         </header>
 
         <div class="content">
+          <div id="home-view" hidden>
+            <div class="page-heading">
+              <div>
+                <div class="eyebrow"><span class="eyebrow-line"></span> FATUM · ORDEM 2</div>
+                <h1>O que vamos começar?</h1>
+                <p class="home-lead">Crie uma campanha para mestrar ou uma ficha de personagem. Para abrir o que você já tem, use o seletor de campanha na barra lateral.</p>
+              </div>
+            </div>
+            <div class="home-grid">
+              <button class="home-card" type="button" id="home-new-campaign"><span class="home-card-icon">◈</span><strong>Nova campanha</strong><span>Seja o mestre: crie a campanha, acompanhe ameaças e NPCs e convide os jogadores.</span></button>
+              <button class="home-card" type="button" id="home-new-character"><span class="home-card-icon">▤</span><strong>Nova ficha</strong><span>Crie um personagem sem precisar estar em campanha. Ele fica em Meus personagens até você levá-lo para uma.</span></button>
+              <button class="home-card" type="button" id="home-join" hidden><span class="home-card-icon">⌘</span><strong>Entrar com código</strong><span>Recebeu um código do mestre? Entre na campanha dele para jogar.</span></button>
+            </div>
+          </div>
           <div id="sheet-view">
           <div class="page-heading">
             <div>

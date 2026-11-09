@@ -297,7 +297,8 @@ function loadStore() {
 
 let store = loadStore();
 let character = null;
-let currentView = "sheet";
+let currentView = "home";
+let agentTargetId = null;
 let cloudAvailable = false;
 let authUser = null;
 let cloudSession = false;
@@ -618,8 +619,9 @@ function handleView(view) {
   if (view === "master" && !isMasterOf(getActiveCampaign())) return;
   currentView = view;
   if (view === "master") renderMasterView();
+  renderCampaignChrome();
   applyView();
-  if (view === "master" || view === "notes" || view === "sheet" || !character) {
+  if (view === "home" || view === "master" || view === "notes" || view === "sheet" || !character) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
@@ -631,18 +633,23 @@ function handleView(view) {
 }
 
 function applyView() {
+  const isHome = currentView === "home";
   const isMaster = currentView === "master";
   const isNotes = currentView === "notes";
+  document.body.classList.toggle("is-home", isHome);
+  byId("home-view").hidden = !isHome;
+  byId("share-button").hidden = isHome;
   byId("master-view").hidden = !isMaster;
-  byId("sheet-view").hidden = isMaster || isNotes || !character;
+  byId("sheet-view").hidden = isHome || isMaster || isNotes || !character;
   byId("notes-panel").hidden = !isNotes || !character;
-  byId("empty-sheet-panel").hidden = isMaster || Boolean(character);
-  byId("breadcrumb-section").textContent = isMaster ? "Ficha do mestre" : character ? character.name : "Personagens";
+  byId("empty-sheet-panel").hidden = isHome || isMaster || Boolean(character);
+  byId("breadcrumb-campaign").textContent = isHome ? "Fatum" : getActiveCampaign().name;
+  byId("breadcrumb-section").textContent = isHome ? "Início" : isMaster ? "Ficha do mestre" : character ? character.name : "Personagens";
   document.querySelectorAll(".nav-item").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === currentView);
   });
   document.querySelectorAll(".agent-nav-item").forEach((button) => {
-    button.classList.toggle("active", !isMaster && button.dataset.agentId === character?.id);
+    button.classList.toggle("active", !isHome && !isMaster && button.dataset.agentId === character?.id);
   });
 }
 
@@ -656,9 +663,11 @@ function initials(name) {
 
 function renderCampaignChrome() {
   const campaign = getActiveCampaign();
-  byId("campaign-switcher-name").textContent = campaign.name;
+  byId("campaign-switcher-name").textContent = currentView === "home" ? "Escolher campanha" : campaign.name;
   const personal = isPersonal(campaign);
-  byId("campaign-switcher-meta").textContent = personal
+  byId("campaign-switcher-meta").textContent = currentView === "home"
+    ? "Abrir campanhas e fichas salvas"
+    : personal
     ? `Sem campanha · ${pluralize(campaign.characters.length, "personagem", "personagens")}`
     : `Campanha · ${pluralize(campaign.characters.length, "agente", "agentes")}`;
   byId("agent-nav-label").textContent = personal ? "MEUS PERSONAGENS" : "FICHAS DOS JOGADORES";
@@ -777,6 +786,7 @@ function selectCampaign(campaignId) {
   if (!store.campaigns.some(({ id }) => id === campaignId)) return;
   saveStore();
   store.activeCampaignId = campaignId;
+  if (currentView === "home") currentView = "sheet";
   syncActiveCharacter();
   byId("roll-dt").value = getActiveCampaign().defaultDt;
   saveStore();
@@ -1226,9 +1236,11 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("[data-new-agent]")) openAgentForm();
 });
 
-function openAgentForm() {
+function openAgentForm(targetId = store.activeCampaignId) {
+  agentTargetId = targetId;
   byId("agent-form").reset();
-  if (cloudSession && !isMasterOf(getActiveCampaign())) byId("agent-form").elements.player.value = authUser?.displayName ?? "";
+  const target = store.campaigns.find(({ id }) => id === targetId) ?? getActiveCampaign();
+  if (cloudSession && !isMasterOf(target)) byId("agent-form").elements.player.value = authUser?.displayName ?? "";
   byId("agent-dialog").showModal();
 }
 
@@ -1255,7 +1267,13 @@ byId("agent-form").addEventListener("submit", (event) => {
     return;
   }
   const agent = createBlankCharacter({ name, player: form.elements.player.value.trim(), profile: form.elements.profile.value });
-  getActiveCampaign().characters.push(agent);
+  const target = store.campaigns.find(({ id }) => id === agentTargetId) ?? getActiveCampaign();
+  if (target.id !== store.activeCampaignId) {
+    saveStore();
+    store.activeCampaignId = target.id;
+    byId("roll-dt").value = target.defaultDt;
+  }
+  target.characters.push(agent);
   selectAgent(agent.id);
   setTimeout(() => byId("edit-button").click(), 0);
 });
@@ -1431,6 +1449,7 @@ function renderProfile() {
     ? cloudSession ? "Conta Google · sincronizado" : "Carregando campanhas…"
     : cloudAvailable ? "Salve suas campanhas na nuvem" : "Salvo neste navegador";
   byId("join-campaign-button").hidden = !cloudAvailable;
+  byId("home-join").hidden = !cloudAvailable;
   byId("campaign-hint").textContent = cloudSession
     ? "As campanhas ficam salvas na sua conta Google. Como mestre, envie o código de convite da campanha aos jogadores; como jogador, use “Entrar com código”."
     : "As campanhas ficam salvas neste dispositivo. Exporte o arquivo da campanha para fazer backup ou levar para outro navegador.";
@@ -1466,7 +1485,7 @@ window.fatumApp = {
     cloudSession = false;
     authUser = null;
     if (wasCloud) {
-      currentView = "sheet";
+      currentView = "home";
       replaceStore(loadStore(), false);
     }
     setSaveStatus("Campanha salva neste dispositivo", false);
@@ -1538,6 +1557,15 @@ byId("copy-invite-button").addEventListener("click", async () => {
   } catch (error) {
     openMessage("Código de convite", `Envie este código aos jogadores: ${code}`);
   }
+});
+
+byId("home-new-campaign").addEventListener("click", () => openCampaignForm("create"));
+byId("home-new-character").addEventListener("click", () => openAgentForm(PERSONAL_ID));
+byId("home-join").addEventListener("click", () => byId("join-campaign-button").click());
+document.querySelector(".brand-main").addEventListener("click", (event) => {
+  event.preventDefault();
+  handleView("home");
+  byId("sidebar").classList.remove("open");
 });
 
 byId("mobile-menu").addEventListener("click", () => byId("sidebar").classList.toggle("open"));
