@@ -1332,6 +1332,7 @@ byId("threat-form").querySelectorAll("input").forEach((input) => {
 
 function replaceStore(nextStore, keepSelection = true) {
   const activeCampaignId = store.activeCampaignId;
+  const activeDefaultDt = getActiveCampaign().defaultDt;
   const activeCharacterId = character?.id ?? null;
   const selections = new Map(store.campaigns.map(({ id, activeCharacterId: selected }) => [id, selected]));
   store = nextStore;
@@ -1344,7 +1345,8 @@ function replaceStore(nextStore, keepSelection = true) {
   }
   syncActiveCharacter();
   if ((character?.id ?? null) !== activeCharacterId) byId("character-dialog").close();
-  if (getActiveCampaign().id !== activeCampaignId) byId("roll-dt").value = getActiveCampaign().defaultDt;
+  const campaign = getActiveCampaign();
+  if (campaign.id !== activeCampaignId || campaign.defaultDt !== activeDefaultDt) byId("roll-dt").value = campaign.defaultDt;
   renderApp();
 }
 
