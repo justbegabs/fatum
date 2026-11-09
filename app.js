@@ -1297,9 +1297,15 @@ byId("threat-form").querySelectorAll("input").forEach((input) => {
 window.addEventListener("storage", (event) => {
   if (event.key !== CAMPAIGNS_KEY || event.newValue === null) return;
   const activeCampaignId = store.activeCampaignId;
+  const activeCharacterId = character?.id ?? null;
   store = loadStore();
-  if (store.campaigns.some(({ id }) => id === activeCampaignId)) store.activeCampaignId = activeCampaignId;
+  const campaign = store.campaigns.find(({ id }) => id === activeCampaignId);
+  if (campaign) {
+    store.activeCampaignId = activeCampaignId;
+    if (campaign.characters.some(({ id }) => id === activeCharacterId)) campaign.activeCharacterId = activeCharacterId;
+  }
   syncActiveCharacter();
+  if ((character?.id ?? null) !== activeCharacterId) byId("character-dialog").close();
   renderApp();
 });
 
