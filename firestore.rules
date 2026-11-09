@@ -77,6 +77,10 @@ service cloud.firestore {
       }
     }
 
+    match /users/{uid}/characters/{characterId} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
     match /invites/{code} {
       allow get: if signedIn();
       allow create: if signedIn()
