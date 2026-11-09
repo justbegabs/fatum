@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function campaignData(campaignId) {
+      return get(/databases/$(database)/documents/campaigns/$(campaignId)).data;
+    }
+
+    function isMaster(campaignId) {
+      return signedIn() && campaignData(campaignId).ownerUid == request.auth.uid;
+    }
+
+    function isMember(campaignId) {
+      return signedIn() && request.auth.uid in campaignData(campaignId).memberUids;
+    }
+
+    match /campaigns/{campaignId} {
+      function joining() {
+        let uid = request.auth.uid;
+        let before = resource.data;
+        let after = request.resource.data;
+        return !(uid in before.memberUids)
+          && after.diff(before).affectedKeys().hasOnly(["memberUids", "joins"])
+          && after.memberUids.size() == before.memberUids.size() + 1
+          && after.memberUids.toSet() == before.memberUids.toSet().union([uid].toSet())
+          && after.joins.diff(before.joins).affectedKeys().hasOnly([uid])
+          && after.joins[uid] == before.inviteCode;
+      }
+
+      function leaving() {
+        let uid = request.auth.uid;
+        let before = resource.data;
+        let after = request.resource.data;
+        return uid in before.memberUids
+          && uid != before.ownerUid
+          && after.diff(before).affectedKeys().hasOnly(["memberUids"])
+          && after.memberUids.toSet() == before.memberUids.toSet().difference([uid].toSet());
+      }
+
+      function masterUpdate() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return before.ownerUid == request.auth.uid
+          && after.ownerUid == before.ownerUid
+          && after.inviteCode == before.inviteCode
+          && request.auth.uid in after.memberUids;
+      }
+
+      allow read: if signedIn() && request.auth.uid in resource.data.memberUids;
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.memberUids == [request.auth.uid]
+        && request.resource.data.joins == {}
+        && request.resource.data.inviteCode is string
+        && request.resource.data.inviteCode.size() >= 8;
+      allow update: if signedIn() && (masterUpdate() || joining() || leaving());
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+
+      match /characters/{characterId} {
+        allow read: if isMaster(campaignId)
+          || (isMember(campaignId) && resource.data.ownerUid == request.auth.uid);
+        allow create: if isMember(campaignId) && request.resource.data.ownerUid == request.auth.uid;
+        allow update: if (isMaster(campaignId) && request.resource.data.ownerUid == resource.data.ownerUid)
+          || (isMember(campaignId)
+            && resource.data.ownerUid == request.auth.uid
+            && request.resource.data.ownerUid == request.auth.uid);
+        allow delete: if isMaster(campaignId)
+          || (isMember(campaignId) && resource.data.ownerUid == request.auth.uid);
+      }
+
+      match /private/{docId} {
+        allow read, write: if isMaster(campaignId);
+      }
+    }
+
+    match /invites/{code} {
+      allow get: if signedIn();
+      allow create: if signedIn()
+        && isMaster(request.resource.data.campaignId)
+        && campaignData(request.resource.data.campaignId).inviteCode == code;
+      allow delete: if signedIn() && isMaster(resource.data.campaignId);
+    }
+  }
+}

@@ -284,6 +284,15 @@ function loadStore() {
 let store = loadStore();
 let character = null;
 let currentView = "sheet";
+let cloudAvailable = false;
+let authUser = null;
+let cloudSession = false;
+
+const isMasterOf = (campaign) => campaign.role !== "player";
+
+function hasLocalData() {
+  return [CAMPAIGNS_KEY, STORAGE_KEY, LEGACY_STORAGE_KEY].some((key) => localStorage.getItem(key) !== null);
+}
 
 function getActiveCampaign() {
   return store.campaigns.find(({ id }) => id === store.activeCampaignId) ?? store.campaigns[0];
@@ -299,7 +308,7 @@ function setSaveStatus(message, failed) {
     ? escapeHtml(message)
     : `<span class="status-dot"></span> ${escapeHtml(message)}`;
   ["notes-status", "master-notes-status"].forEach((id) => {
-    byId(id).textContent = failed ? message : "Salvas neste dispositivo";
+    byId(id).textContent = failed ? message : cloudSession ? "Salvas na nuvem" : "Salvas neste dispositivo";
     byId(id).classList.toggle("error", failed);
   });
 }
@@ -309,6 +318,10 @@ function saveStore() {
   if (character) {
     const index = campaign.characters.findIndex(({ id }) => id === character.id);
     if (index >= 0) campaign.characters[index] = character;
+  }
+  if (cloudSession) {
+    window.fatumCloud.save(store);
+    return true;
   }
   try {
     localStorage.setItem(CAMPAIGNS_KEY, JSON.stringify(store));
@@ -588,6 +601,7 @@ function handleView(view) {
     sheet: ["Ficha de personagem", "Sua ficha continua nesta visão geral."],
     inventory: ["Inventário", "Seu equipamento está listado no painel Itens carregados. Você pode adicionar novos itens por lá."]
   };
+  if (view === "master" && !isMasterOf(getActiveCampaign())) return;
   currentView = view;
   if (view === "master") renderMasterView();
   applyView();
@@ -633,6 +647,8 @@ function renderCampaignChrome() {
   byId("breadcrumb-campaign").textContent = campaign.name;
   byId("threat-count").textContent = campaign.master.threats.length;
   byId("default-dt-value").textContent = campaign.defaultDt;
+  byId("master-nav-label").hidden = !isMasterOf(campaign);
+  byId("master-nav").hidden = !isMasterOf(campaign);
   byId("agent-nav").innerHTML = campaign.characters.map((agent) =>
     `<button type="button" class="agent-nav-item" data-agent-id="${escapeHtml(agent.id)}"><span class="agent-avatar">${escapeHtml(initials(agent.name))}</span><span class="agent-nav-copy"><strong>${escapeHtml(agent.name)}</strong><small>${escapeHtml([agent.player, `${agent.profile} · Nv ${agent.level}`].filter(Boolean).join(" · "))}</small></span></button>`
   ).join("") || '<p class="agent-nav-empty">Nenhuma ficha ainda.</p>';
@@ -645,8 +661,13 @@ function renderActiveCharacter() {
   }
   renderCharacter();
   renderAttributes();
-  byId("character-history").value = character.history;
-  byId("character-notes").value = character.notes;
+  setFieldValue("character-history", character.history);
+  setFieldValue("character-notes", character.notes);
+}
+
+function setFieldValue(id, value) {
+  const field = byId(id);
+  if (field.value !== value) field.value = value;
 }
 
 function vitalAdjuster({ label, kind, targetId, vital, value, max, scope }) {
@@ -673,8 +694,10 @@ function renderMasterView() {
   byId("master-default-dt").textContent = campaign.defaultDt;
   const createdAt = new Date(campaign.createdAt);
   byId("master-created-at").textContent = Number.isNaN(createdAt.getTime()) ? "—" : createdAt.toLocaleDateString("pt-BR");
-  byId("master-notes").value = campaign.master.notes;
-  byId("master-session-log").value = campaign.master.sessionLog;
+  setFieldValue("master-notes", campaign.master.notes);
+  setFieldValue("master-session-log", campaign.master.sessionLog);
+  byId("invite-panel").hidden = !cloudSession || !campaign.inviteCode;
+  byId("invite-code").textContent = campaign.inviteCode || "—";
 
   byId("master-agent-list").innerHTML = campaign.characters.map((agent) => {
     const attributes = ATTRIBUTE_OPTIONS.map(({ key, name }) => `<span>${name} <b>d${agent.attributes[key]}</b></span>`).join("");
@@ -708,6 +731,7 @@ function renderMasterView() {
 }
 
 function renderApp() {
+  if (currentView === "master" && !isMasterOf(getActiveCampaign())) currentView = "sheet";
   renderCampaignChrome();
   renderActiveCharacter();
   renderMasterView();
@@ -967,17 +991,19 @@ byId("help-button").addEventListener("click", () => {
 });
 
 function renderCampaignList() {
-  const canDelete = store.campaigns.length > 1;
   byId("campaign-list").innerHTML = store.campaigns.map((campaign) => {
+    const canDelete = store.campaigns.length > 1 || !isMasterOf(campaign);
     const isActive = campaign.id === store.activeCampaignId;
     const meta = [pluralize(campaign.characters.length, "agente", "agentes"), campaign.masterName && `Mestre: ${campaign.masterName}`].filter(Boolean).join(" · ");
+    const role = campaign.role ? `<span class="campaign-role">${campaign.role === "player" ? "JOGADOR" : "MESTRE"}</span>` : "";
+    const removeLabel = isMasterOf(campaign) ? "Excluir campanha" : "Sair da campanha";
     return `<div class="campaign-option ${isActive ? "active" : ""}">
       <button type="button" class="campaign-select" data-select-campaign="${escapeHtml(campaign.id)}" ${isActive ? 'aria-current="true"' : ""}>
         <span class="campaign-icon">⌖</span>
         <span class="campaign-copy"><strong>${escapeHtml(campaign.name)}</strong><small>${escapeHtml(meta)}</small></span>
-        ${isActive ? '<span class="campaign-active-label">ATIVA</span>' : ""}
+        ${role}${isActive ? '<span class="campaign-active-label">ATIVA</span>' : ""}
       </button>
-      <button type="button" class="threat-remove" data-delete-campaign="${escapeHtml(campaign.id)}" aria-label="Excluir campanha ${escapeHtml(campaign.name)}" title="${canDelete ? "Excluir campanha" : "Mantenha ao menos uma campanha"}" ${canDelete ? "" : "disabled"}>×</button>
+      <button type="button" class="threat-remove" data-delete-campaign="${escapeHtml(campaign.id)}" aria-label="${removeLabel} ${escapeHtml(campaign.name)}" title="${canDelete ? removeLabel : "Mantenha ao menos uma campanha"}" ${canDelete ? "" : "disabled"}>×</button>
     </div>`;
   }).join("");
 }
@@ -990,11 +1016,18 @@ byId("campaign-list").addEventListener("click", (event) => {
     return;
   }
   const remove = event.target.closest("[data-delete-campaign]");
-  if (!remove || store.campaigns.length <= 1) return;
+  if (!remove) return;
   const campaign = store.campaigns.find(({ id }) => id === remove.dataset.deleteCampaign);
-  if (!campaign || !confirm(`Excluir a campanha "${campaign.name}" com todas as suas fichas? Esta ação não pode ser desfeita.`)) return;
+  if (!campaign || (store.campaigns.length <= 1 && isMasterOf(campaign))) return;
+  const question = isMasterOf(campaign)
+    ? `Excluir a campanha "${campaign.name}" com todas as suas fichas? Esta ação não pode ser desfeita.`
+    : `Sair da campanha "${campaign.name}"? Sua ficha continua com o mestre.`;
+  if (!confirm(question)) return;
   saveStore();
   store.campaigns = store.campaigns.filter(({ id }) => id !== campaign.id);
+  if (!store.campaigns.length) {
+    store.campaigns.push(normalizeCampaign({ name: "Minha campanha", masterName: authUser?.displayName ?? "", characters: [] }));
+  }
   if (store.activeCampaignId === campaign.id) {
     store.activeCampaignId = store.campaigns[0].id;
     syncActiveCharacter();
@@ -1107,7 +1140,7 @@ byId("import-campaign-input").addEventListener("change", async (event) => {
     const isCampaign = data.format === "fatum-ordem2-campaign" || (!data.format && Array.isArray(data.characters));
     if (!isCampaign) throw new TypeError("O arquivo não é uma campanha exportada.");
     const campaign = normalizeCampaign(data.format ? data.campaign : data);
-    if (store.campaigns.some(({ id }) => id === campaign.id)) {
+    if (cloudSession || store.campaigns.some(({ id }) => id === campaign.id)) {
       campaign.id = createId("campaign");
       campaign.name = `${campaign.name} (cópia)`;
     }
@@ -1149,6 +1182,7 @@ byId("import-character-input").addEventListener("change", async (event) => {
     campaign.characters[index] = imported;
     if (character?.id === imported.id) character = imported;
   } else {
+    if (cloudSession) imported.id = createId("agent");
     campaign.characters.push(imported);
   }
   if (!character) {
@@ -1165,15 +1199,17 @@ document.addEventListener("click", (event) => {
     byId("import-character-input").click();
     return;
   }
-  if (event.target.closest("[data-new-agent]")) {
-    byId("agent-form").reset();
-    byId("agent-dialog").showModal();
-  }
+  if (event.target.closest("[data-new-agent]")) openAgentForm();
 });
 
-byId("add-agent-button").addEventListener("click", () => {
+function openAgentForm() {
   byId("agent-form").reset();
+  if (cloudSession && !isMasterOf(getActiveCampaign())) byId("agent-form").elements.player.value = authUser?.displayName ?? "";
   byId("agent-dialog").showModal();
+}
+
+byId("add-agent-button").addEventListener("click", () => {
+  openAgentForm();
   byId("sidebar").classList.remove("open");
 });
 
@@ -1294,19 +1330,152 @@ byId("threat-form").querySelectorAll("input").forEach((input) => {
   input.addEventListener("input", () => input.setCustomValidity(""));
 });
 
-window.addEventListener("storage", (event) => {
-  if (event.key !== CAMPAIGNS_KEY || event.newValue === null) return;
+function replaceStore(nextStore, keepSelection = true) {
   const activeCampaignId = store.activeCampaignId;
+  const activeDefaultDt = getActiveCampaign().defaultDt;
   const activeCharacterId = character?.id ?? null;
-  store = loadStore();
-  const campaign = store.campaigns.find(({ id }) => id === activeCampaignId);
-  if (campaign) {
-    store.activeCampaignId = activeCampaignId;
-    if (campaign.characters.some(({ id }) => id === activeCharacterId)) campaign.activeCharacterId = activeCharacterId;
+  const selections = new Map(store.campaigns.map(({ id, activeCharacterId: selected }) => [id, selected]));
+  store = nextStore;
+  if (keepSelection) {
+    store.campaigns.forEach((campaign) => {
+      const selected = selections.get(campaign.id);
+      if (campaign.characters.some(({ id }) => id === selected)) campaign.activeCharacterId = selected;
+    });
+    if (store.campaigns.some(({ id }) => id === activeCampaignId)) store.activeCampaignId = activeCampaignId;
   }
   syncActiveCharacter();
   if ((character?.id ?? null) !== activeCharacterId) byId("character-dialog").close();
+  const campaign = getActiveCampaign();
+  if (campaign.id !== activeCampaignId || campaign.defaultDt !== activeDefaultDt) byId("roll-dt").value = campaign.defaultDt;
   renderApp();
+}
+
+window.addEventListener("storage", (event) => {
+  if (cloudSession || event.key !== CAMPAIGNS_KEY || event.newValue === null) return;
+  replaceStore(loadStore());
+});
+
+function renderProfile() {
+  const avatar = byId("profile-avatar");
+  const name = authUser?.displayName || authUser?.email || "";
+  avatar.textContent = authUser ? initials(name || "?") : "?";
+  if (authUser?.photoURL) {
+    const image = document.createElement("img");
+    image.src = authUser.photoURL;
+    image.alt = "";
+    image.referrerPolicy = "no-referrer";
+    avatar.replaceChildren(image);
+  }
+  byId("profile-name").textContent = authUser ? name : cloudAvailable ? "Entrar com Google" : "Modo local";
+  byId("profile-detail").textContent = authUser
+    ? cloudSession ? "Conta Google · sincronizado" : "Carregando campanhas…"
+    : cloudAvailable ? "Salve suas campanhas na nuvem" : "Salvo neste navegador";
+  byId("join-campaign-button").hidden = !cloudAvailable;
+  byId("campaign-hint").textContent = cloudSession
+    ? "As campanhas ficam salvas na sua conta Google. Como mestre, envie o código de convite da campanha aos jogadores; como jogador, use “Entrar com código”."
+    : "As campanhas ficam salvas neste dispositivo. Exporte o arquivo da campanha para fazer backup ou levar para outro navegador.";
+}
+
+window.fatumApp = {
+  normalizeCampaign,
+  createId,
+  openMessage,
+  setSaveStatus,
+  selectCampaign,
+  getLocalCampaigns: () => hasLocalData() ? loadStore().campaigns : [],
+  setCloudAvailable(available) {
+    cloudAvailable = available;
+    renderProfile();
+  },
+  setAuthUser(user) {
+    authUser = user;
+    if (user && !cloudSession) setSaveStatus("Carregando campanhas da nuvem…", false);
+    renderProfile();
+  },
+  applyCloudStore(nextStore) {
+    const entering = !cloudSession;
+    cloudSession = true;
+    replaceStore(nextStore, !entering);
+    if (entering) setSaveStatus("Sincronizado na nuvem", false);
+    renderProfile();
+  },
+  exitCloud() {
+    const wasCloud = cloudSession;
+    cloudSession = false;
+    authUser = null;
+    if (wasCloud) {
+      currentView = "sheet";
+      replaceStore(loadStore(), false);
+    }
+    setSaveStatus("Campanha salva neste dispositivo", false);
+    renderProfile();
+  }
+};
+
+document.querySelector(".profile-button").addEventListener("click", async () => {
+  if (!cloudAvailable) {
+    openMessage("Login indisponível", "O login com Google ainda não foi configurado neste site. Suas campanhas ficam salvas neste navegador.");
+    return;
+  }
+  if (!authUser) {
+    try {
+      await window.fatumCloud.signIn();
+    } catch (error) {
+      if (error?.code === "auth/popup-closed-by-user" || error?.code === "auth/cancelled-popup-request") return;
+      console.error("Não foi possível entrar com o Google.", error);
+      openMessage("Não foi possível entrar", "O login com o Google falhou. Tente novamente.");
+    }
+    return;
+  }
+  if (confirm(`Sair da conta ${authUser.displayName || authUser.email}? As campanhas continuam salvas na nuvem.`)) {
+    await window.fatumCloud.signOut();
+  }
+});
+
+byId("join-campaign-button").addEventListener("click", async () => {
+  if (!authUser) {
+    byId("campaign-dialog").close();
+    openMessage("Entre com o Google", "Para entrar em uma campanha com código, primeiro entre com a sua conta Google pelo botão no canto inferior da barra lateral.");
+    return;
+  }
+  byId("campaign-dialog").close();
+  byId("join-form").reset();
+  byId("join-dialog").showModal();
+});
+
+byId("join-form").addEventListener("submit", async (event) => {
+  if (event.submitter?.value !== "save") return;
+  event.preventDefault();
+  const input = event.currentTarget.elements.code;
+  const code = input.value.trim().toUpperCase();
+  if (!code) {
+    input.setCustomValidity("Informe o código de convite.");
+    input.reportValidity();
+    return;
+  }
+  byId("join-submit").disabled = true;
+  try {
+    const name = await window.fatumCloud.joinCampaign(code);
+    byId("join-dialog").close();
+    openMessage("Você entrou na campanha", `Bem-vindo a ${name}. Crie a sua ficha de jogador para começar.`);
+  } catch (error) {
+    console.error("Não foi possível entrar na campanha.", error);
+    input.setCustomValidity(error?.message === "invite-not-found" ? "Código de convite não encontrado." : "Não foi possível entrar na campanha. Tente novamente.");
+    input.reportValidity();
+  } finally {
+    byId("join-submit").disabled = false;
+  }
+});
+byId("join-form").elements.code.addEventListener("input", (event) => event.currentTarget.setCustomValidity(""));
+
+byId("copy-invite-button").addEventListener("click", async () => {
+  const code = getActiveCampaign().inviteCode;
+  try {
+    await navigator.clipboard.writeText(code);
+    openMessage("Código copiado", `O código ${code} foi copiado. Envie aos jogadores da campanha.`);
+  } catch (error) {
+    openMessage("Código de convite", `Envie este código aos jogadores: ${code}`);
+  }
 });
 
 byId("mobile-menu").addEventListener("click", () => byId("sidebar").classList.toggle("open"));
@@ -1314,8 +1483,8 @@ document.querySelector(".campaign-switcher").addEventListener("click", () => {
   renderCampaignList();
   byId("campaign-dialog").showModal();
 });
-document.querySelector(".profile-button").addEventListener("click", () => openMessage("Perfil do jogador", "Você está usando a ficha local como Gabriel."));
 
 syncActiveCharacter();
 byId("roll-dt").value = getActiveCampaign().defaultDt;
 renderApp();
+renderProfile();
