@@ -1271,6 +1271,7 @@ byId("agent-form").addEventListener("submit", (event) => {
   if (target.id !== store.activeCampaignId) {
     saveStore();
     store.activeCampaignId = target.id;
+    character = null;
     byId("roll-dt").value = target.defaultDt;
   }
   target.characters.push(agent);
