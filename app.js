@@ -1281,7 +1281,7 @@ byId("move-form").addEventListener("submit", (event) => {
   if (!character || !isPersonal(personal) || !target || isPersonal(target)) return;
   saveStore();
   const moved = { ...character };
-  if (target.characters.some(({ id }) => id === moved.id)) moved.id = createId("agent");
+  if (cloudSession || target.characters.some(({ id }) => id === moved.id)) moved.id = createId("agent");
   personal.characters = personal.characters.filter(({ id }) => id !== character.id);
   personal.activeCharacterId = personal.characters[0]?.id ?? null;
   target.characters.push(moved);
