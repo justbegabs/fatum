@@ -29,8 +29,8 @@
           <span class="switcher-chevron">⌄</span>
         </button>
 
-        <div class="nav-label">MESTRE</div>
-        <nav class="main-nav master-nav" aria-label="Navegação do mestre">
+        <div class="nav-label" id="master-nav-label">MESTRE</div>
+        <nav class="main-nav master-nav" id="master-nav" aria-label="Navegação do mestre">
           <button class="nav-item" data-view="master"><span class="nav-icon">◈</span> Ficha do mestre <span class="nav-count" id="threat-count">0</span></button>
         </nav>
 
@@ -49,8 +49,8 @@
         <div class="sidebar-bottom">
           <div class="sync-status"><span class="status-dot"></span> Campanha salva neste dispositivo</div>
           <button class="profile-button" type="button">
-            <span class="profile-avatar">G</span>
-            <span><strong>Gabriel</strong><small>Jogador</small></span>
+            <span class="profile-avatar" id="profile-avatar">?</span>
+            <span><strong id="profile-name">Modo local</strong><small id="profile-detail">Salvo neste navegador</small></span>
             <span class="profile-more">···</span>
           </button>
         </div>
@@ -224,6 +224,15 @@
               <div><span>CRIADA EM</span><strong id="master-created-at">—</strong></div>
             </section>
 
+            <section class="panel invite-panel" id="invite-panel" hidden>
+              <div>
+                <span class="section-kicker">CONVITE DOS JOGADORES</span>
+                <h3>Código da campanha: <strong id="invite-code">—</strong></h3>
+                <p>Envie este código aos jogadores. Eles entram com a conta Google, abrem o seletor de campanha e clicam em “Entrar com código”.</p>
+              </div>
+              <button class="button button-outline" type="button" id="copy-invite-button"><span>⧉</span> Copiar código</button>
+            </section>
+
             <div class="master-grid">
               <section class="panel master-agents-panel" aria-labelledby="master-agents-title">
                 <div class="panel-heading">
@@ -351,10 +360,11 @@
       <form method="dialog">
         <div class="modal-heading"><div><span class="section-kicker">ESPAÇO DE JOGO</span><h2 id="campaign-dialog-title">Campanhas</h2></div><button class="modal-close" aria-label="Fechar">×</button></div>
         <div class="campaign-list" id="campaign-list"></div>
-        <p class="campaign-hint">As campanhas ficam salvas neste dispositivo. Exporte o arquivo da campanha para fazer backup ou levar para outro navegador.</p>
+        <p class="campaign-hint" id="campaign-hint">As campanhas ficam salvas neste dispositivo. Exporte o arquivo da campanha para fazer backup ou levar para outro navegador.</p>
         <div class="modal-actions campaign-actions">
           <button class="button button-outline" type="button" id="import-campaign-button"><span>⇧</span> Importar</button>
           <button class="button button-outline" type="button" id="export-campaign-button"><span>⇩</span> Exportar atual</button>
+          <button class="button button-outline" type="button" id="join-campaign-button" hidden><span>⌘</span> Entrar com código</button>
           <button class="button button-primary" type="button" id="new-campaign-button"><span>+</span> Nova campanha</button>
         </div>
       </form>
@@ -398,8 +408,18 @@
       </form>
     </dialog>
 
+    <dialog id="join-dialog" class="modal modal-small" aria-labelledby="join-dialog-title">
+      <form method="dialog" id="join-form">
+        <div class="modal-heading"><div><span class="section-kicker">CONVITE</span><h2 id="join-dialog-title">Entrar em uma campanha</h2></div><button class="modal-close" aria-label="Fechar" value="cancel" formnovalidate>×</button></div>
+        <label>Código de convite<input name="code" required maxlength="12" autocomplete="off" placeholder="Ex.: K7PX2MQA"></label>
+        <p class="level-up-summary">Peça o código ao mestre. Depois de entrar, crie a sua ficha: só você e o mestre podem vê-la.</p>
+        <div class="modal-actions"><button class="button button-outline" value="cancel" formnovalidate>Cancelar</button><button class="button button-primary" value="save" id="join-submit">Entrar</button></div>
+      </form>
+    </dialog>
+
     <input type="file" id="import-campaign-input" accept="application/json,.json" hidden>
     <input type="file" id="import-character-input" accept="application/json,.json" hidden>
     <script src="app.js"></script>
+    <script type="module" src="cloud.js"></script>
   </body>
 </html>
