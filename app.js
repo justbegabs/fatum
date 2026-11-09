@@ -731,6 +731,7 @@ function renderMasterView() {
 }
 
 function renderApp() {
+  if (currentView === "master" && !isMasterOf(getActiveCampaign())) currentView = "sheet";
   renderCampaignChrome();
   renderActiveCharacter();
   renderMasterView();
@@ -1341,7 +1342,6 @@ function replaceStore(nextStore, keepSelection = true) {
   syncActiveCharacter();
   if ((character?.id ?? null) !== activeCharacterId) byId("character-dialog").close();
   if (getActiveCampaign().id !== activeCampaignId) byId("roll-dt").value = getActiveCampaign().defaultDt;
-  if (currentView === "master" && !isMasterOf(getActiveCampaign())) currentView = "sheet";
   renderApp();
 }
 
