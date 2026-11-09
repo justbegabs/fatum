@@ -27,11 +27,14 @@
         </nav>
 
         <div class="workspace-label">ESPAÇO DE JOGO</div>
+        <div class="campaign-switcher-row">
         <button class="campaign-switcher" type="button">
           <span class="campaign-icon">⌖</span>
           <span class="campaign-copy"><strong id="campaign-switcher-name">Operação Eclipse</strong><small id="campaign-switcher-meta">Campanha · 1 agente</small></span>
           <span class="switcher-chevron">⌄</span>
         </button>
+        <button class="nav-remove sidebar-context" id="sidebar-delete-campaign" type="button" title="Excluir campanha" aria-label="Excluir campanha">×</button>
+        </div>
 
         <div class="nav-label sidebar-context" id="master-nav-label">MESTRE</div>
         <nav class="main-nav master-nav sidebar-context" id="master-nav" aria-label="Navegação do mestre">
@@ -94,6 +97,7 @@
               <p class="page-subtitle">Perfil, atributos e perícias — do jeito de Ordem 2.</p>
             </div>
             <div class="page-heading-actions">
+              <button class="button button-danger-outline" id="page-delete-character" type="button"><span>×</span> Excluir ficha</button>
               <button class="button button-outline" id="move-character-button" type="button" hidden><span>⇢</span> Levar para campanha</button>
               <button class="button button-outline" id="export-character-button" type="button"><span>⇩</span> Exportar ficha</button>
               <button class="button button-primary" id="edit-button"><span>✎</span> Editar personagem</button>
@@ -233,7 +237,10 @@
                 <h1 id="master-campaign-name">Campanha</h1>
                 <p class="page-subtitle" id="master-campaign-description"></p>
               </div>
-              <button class="button button-primary" id="edit-campaign-button" type="button"><span>✎</span> Editar campanha</button>
+              <div class="page-heading-actions">
+                <button class="button button-danger-outline" id="page-delete-campaign" type="button"><span>×</span> Excluir campanha</button>
+                <button class="button button-primary" id="edit-campaign-button" type="button"><span>✎</span> Editar campanha</button>
+              </div>
             </div>
 
             <section class="master-summary" aria-label="Resumo da campanha">
