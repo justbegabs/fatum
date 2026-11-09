@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#101010">
-    <meta name="description" content="Gerencie sua ficha de Ordem 2: perfil, atributos, perícias, PV e PD.">
+    <meta name="description" content="Gerencie campanhas de Ordem 2: ficha do mestre e fichas dos jogadores, com perfil, atributos, perícias, PV e PD.">
     <title>Fatum — Ordem Paranormal 2</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,12 +25,21 @@
         <div class="workspace-label">ESPAÇO DE JOGO</div>
         <button class="campaign-switcher" type="button">
           <span class="campaign-icon">⌖</span>
-          <span class="campaign-copy"><strong>Operação Eclipse</strong><small>Campanha · 4 agentes</small></span>
+          <span class="campaign-copy"><strong id="campaign-switcher-name">Operação Eclipse</strong><small id="campaign-switcher-meta">Campanha · 1 agente</small></span>
           <span class="switcher-chevron">⌄</span>
         </button>
 
-        <div class="nav-label">MENU</div>
-        <nav class="main-nav" aria-label="Navegação principal">
+        <div class="nav-label">MESTRE</div>
+        <nav class="main-nav master-nav" aria-label="Navegação do mestre">
+          <button class="nav-item" data-view="master"><span class="nav-icon">◈</span> Ficha do mestre <span class="nav-count" id="threat-count">0</span></button>
+        </nav>
+
+        <div class="nav-label">FICHAS DOS JOGADORES</div>
+        <div class="agent-nav" id="agent-nav" aria-label="Fichas dos jogadores"></div>
+        <button class="add-agent-button" id="add-agent-button" type="button"><span>+</span> Nova ficha de jogador</button>
+
+        <div class="nav-label">MENU DA FICHA</div>
+        <nav class="main-nav" aria-label="Navegação da ficha">
           <button class="nav-item active" data-view="sheet"><span class="nav-icon">▤</span> Ficha de personagem</button>
           <button class="nav-item" data-view="inventory"><span class="nav-icon">▣</span> Inventário <span class="nav-count" id="inventory-count">0</span></button>
           <button class="nav-item" data-view="abilities"><span class="nav-icon">✳</span> Habilidades</button>
@@ -38,7 +47,7 @@
         </nav>
 
         <div class="sidebar-bottom">
-          <div class="sync-status"><span class="status-dot"></span> Ficha salva neste dispositivo</div>
+          <div class="sync-status"><span class="status-dot"></span> Campanha salva neste dispositivo</div>
           <button class="profile-button" type="button">
             <span class="profile-avatar">G</span>
             <span><strong>Gabriel</strong><small>Jogador</small></span>
@@ -50,7 +59,7 @@
       <main class="main-area">
         <header class="topbar">
           <button class="mobile-menu" id="mobile-menu" aria-label="Abrir menu">☰</button>
-          <div class="breadcrumbs"><span>Operação Eclipse</span><span class="crumb-slash">/</span><strong>Personagens</strong></div>
+          <div class="breadcrumbs"><span id="breadcrumb-campaign">Operação Eclipse</span><span class="crumb-slash">/</span><strong id="breadcrumb-section">Personagens</strong></div>
           <div class="topbar-actions">
             <span class="autosave"><i></i> Salvamento automático</span>
             <button class="icon-button" id="help-button" aria-label="Ajuda">?</button>
@@ -66,7 +75,10 @@
               <h1 id="character-title">A ficha do agente</h1>
               <p class="page-subtitle">Perfil, atributos e perícias — do jeito de Ordem 2.</p>
             </div>
-            <button class="button button-primary" id="edit-button"><span>✎</span> Editar personagem</button>
+            <div class="page-heading-actions">
+              <button class="button button-outline" id="export-character-button" type="button"><span>⇩</span> Exportar ficha</button>
+              <button class="button button-primary" id="edit-button"><span>✎</span> Editar personagem</button>
+            </div>
           </div>
 
           <section class="character-card">
@@ -122,7 +134,7 @@
                 </div>
                 <div class="vital-stat effort">
                   <div class="stat-icon">ϟ</div><div class="stat-label">DT PADRÃO</div>
-                  <div class="stat-values"><strong>7</strong><span>no playtest</span></div>
+                  <div class="stat-values"><strong id="default-dt-value">7</strong><span>na campanha</span></div>
                   <div class="stat-note">Atributo + perícia</div>
                 </div>
               </div>
@@ -184,6 +196,70 @@
                 </label>
               </div>
           </section>
+
+          <section class="panel empty-sheet-panel" id="empty-sheet-panel" hidden>
+            <span class="section-kicker">FICHAS DOS JOGADORES</span>
+            <h3>Nenhuma ficha nesta campanha</h3>
+            <p>Crie a ficha de um jogador ou importe uma ficha exportada por ele.</p>
+            <div class="empty-sheet-actions">
+              <button class="button button-outline" type="button" data-import-character><span>⇧</span> Importar ficha</button>
+              <button class="button button-primary" type="button" data-new-agent><span>+</span> Nova ficha de jogador</button>
+            </div>
+          </section>
+
+          <div id="master-view" hidden>
+            <div class="page-heading">
+              <div>
+                <div class="eyebrow"><span class="eyebrow-line"></span> FICHA DO MESTRE · ORDEM 2 <span class="record-id" id="master-name-label">MESTRE</span></div>
+                <h1 id="master-campaign-name">Campanha</h1>
+                <p class="page-subtitle" id="master-campaign-description"></p>
+              </div>
+              <button class="button button-primary" id="edit-campaign-button" type="button"><span>✎</span> Editar campanha</button>
+            </div>
+
+            <section class="master-summary" aria-label="Resumo da campanha">
+              <div><span>AGENTES</span><strong id="master-agent-total">0</strong></div>
+              <div><span>AMEAÇAS E NPCS</span><strong id="master-threat-total">0</strong></div>
+              <div><span>DT PADRÃO</span><strong id="master-default-dt">7</strong></div>
+              <div><span>CRIADA EM</span><strong id="master-created-at">—</strong></div>
+            </section>
+
+            <div class="master-grid">
+              <section class="panel master-agents-panel" aria-labelledby="master-agents-title">
+                <div class="panel-heading">
+                  <div><span class="section-kicker">FICHAS DOS JOGADORES</span><h3 id="master-agents-title">Agentes da campanha</h3></div>
+                  <div class="panel-actions">
+                    <button class="text-button" type="button" data-import-character>Importar ficha <span>⇧</span></button>
+                    <button class="text-button" type="button" data-new-agent>Nova ficha <span>+</span></button>
+                  </div>
+                </div>
+                <div class="master-agent-list" id="master-agent-list"></div>
+              </section>
+
+              <section class="panel master-threats-panel" aria-labelledby="master-threats-title">
+                <div class="panel-heading">
+                  <div><span class="section-kicker">AMEAÇAS E NPCS</span><h3 id="master-threats-title">Ameaças</h3></div>
+                </div>
+                <div class="threat-list" id="threat-list"></div>
+                <button class="add-item-button" id="add-threat-button" type="button"><span>+</span> Adicionar ameaça ou NPC</button>
+              </section>
+
+              <section class="panel master-notes-panel" aria-labelledby="master-notes-title">
+                <div class="panel-heading">
+                  <div><span class="section-kicker">SOMENTE O MESTRE</span><h3 id="master-notes-title">Anotações do mestre</h3></div>
+                  <span class="notes-status" id="master-notes-status" role="status">Salvas neste dispositivo</span>
+                </div>
+                <div class="notes-fields">
+                  <label for="master-notes">Segredos e preparação
+                    <textarea id="master-notes" rows="8" placeholder="Pistas, segredos, ganchos e preparação da próxima sessão."></textarea>
+                  </label>
+                  <label for="master-session-log">Diário das sessões
+                    <textarea id="master-session-log" rows="8" placeholder="Resumo do que aconteceu em cada sessão."></textarea>
+                  </label>
+                </div>
+              </section>
+            </div>
+          </div>
           <footer class="footer-note"><span>FATUM · FICHA DE ORDEM 2</span><span>BASEADO NO PLAYTEST <b>●</b></span></footer>
         </div>
       </main>
@@ -195,6 +271,7 @@
         <div class="form-grid">
           <label>Nome do personagem<input name="name" required maxlength="40"></label>
           <label>Conceito<input name="concept" maxlength="60"></label>
+          <label>Jogador<input name="player" maxlength="40" placeholder="Nome de quem joga"></label>
           <label>Perfil<select name="profile"><option>Executor</option><option>Analista</option><option>Vigilante</option></select></label>
           <label>Ocupação<input name="occupation" maxlength="32"></label>
           <label>Nível<input name="level" type="number" min="1" step="1" required></label>
@@ -211,7 +288,7 @@
           <p>O teste combina o dado do atributo-base com o dado da perícia.</p>
           <div class="skill-editor-list" id="skill-editor-list"></div>
         </details>
-        <div class="modal-actions"><button class="button button-outline" value="cancel">Cancelar</button><button class="button button-primary" id="save-character" value="save">Salvar ficha</button></div>
+        <div class="modal-actions"><button class="button button-danger" id="delete-character" type="button">Excluir ficha</button><button class="button button-outline" value="cancel">Cancelar</button><button class="button button-primary" id="save-character" value="save">Salvar ficha</button></div>
       </form>
     </dialog>
 
@@ -270,6 +347,59 @@
     <dialog id="roll-dialog" class="modal modal-small" aria-labelledby="roll-title">
       <form method="dialog"><div class="modal-heading"><div><span class="section-kicker">RESULTADO DO TESTE</span><h2 id="roll-title">Rolagem</h2></div><button class="modal-close" aria-label="Fechar">×</button></div><p id="roll-result" class="roll-result" aria-live="polite"></p><div class="modal-actions"><button class="button button-primary">Entendi</button></div></form>
     </dialog>
+    <dialog id="campaign-dialog" class="modal" aria-labelledby="campaign-dialog-title">
+      <form method="dialog">
+        <div class="modal-heading"><div><span class="section-kicker">ESPAÇO DE JOGO</span><h2 id="campaign-dialog-title">Campanhas</h2></div><button class="modal-close" aria-label="Fechar">×</button></div>
+        <div class="campaign-list" id="campaign-list"></div>
+        <p class="campaign-hint">As campanhas ficam salvas neste dispositivo. Exporte o arquivo da campanha para fazer backup ou levar para outro navegador.</p>
+        <div class="modal-actions campaign-actions">
+          <button class="button button-outline" type="button" id="import-campaign-button"><span>⇧</span> Importar</button>
+          <button class="button button-outline" type="button" id="export-campaign-button"><span>⇩</span> Exportar atual</button>
+          <button class="button button-primary" type="button" id="new-campaign-button"><span>+</span> Nova campanha</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="campaign-form-dialog" class="modal modal-small" aria-labelledby="campaign-form-title">
+      <form method="dialog" id="campaign-form">
+        <div class="modal-heading"><div><span class="section-kicker">CAMPANHA</span><h2 id="campaign-form-title">Nova campanha</h2></div><button class="modal-close" aria-label="Fechar" value="cancel" formnovalidate>×</button></div>
+        <label>Nome da campanha<input name="name" required maxlength="48" placeholder="Ex.: Operação Eclipse"></label>
+        <label>Descrição<textarea name="description" rows="3" maxlength="240" placeholder="Premissa, tom ou local da campanha."></textarea></label>
+        <div class="form-grid">
+          <label>Mestre<input name="masterName" maxlength="40" placeholder="Nome do mestre"></label>
+          <label>DT padrão<input name="defaultDt" type="number" min="1" step="1" value="7" required></label>
+        </div>
+        <div class="modal-actions"><button class="button button-outline" value="cancel" formnovalidate>Cancelar</button><button class="button button-primary" value="save" id="campaign-form-submit">Criar campanha</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="agent-dialog" class="modal modal-small" aria-labelledby="agent-dialog-title">
+      <form method="dialog" id="agent-form">
+        <div class="modal-heading"><div><span class="section-kicker">FICHA DE JOGADOR</span><h2 id="agent-dialog-title">Nova ficha</h2></div><button class="modal-close" aria-label="Fechar" value="cancel" formnovalidate>×</button></div>
+        <label>Nome do personagem<input name="name" required maxlength="40" placeholder="Ex.: Lia Monteiro"></label>
+        <label>Jogador<input name="player" maxlength="40" placeholder="Nome de quem joga"></label>
+        <label>Perfil<select name="profile"><option>Executor</option><option>Analista</option><option>Vigilante</option></select></label>
+        <p class="level-up-summary">A ficha começa no nível 1 com atributos d6. Você poderá ajustar tudo em seguida.</p>
+        <div class="modal-actions"><button class="button button-outline" value="cancel" formnovalidate>Cancelar</button><button class="button button-primary" value="save">Criar ficha</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="threat-dialog" class="modal modal-small" aria-labelledby="threat-dialog-title">
+      <form method="dialog" id="threat-form">
+        <div class="modal-heading"><div><span class="section-kicker">FICHA DO MESTRE</span><h2 id="threat-dialog-title">Nova ameaça ou NPC</h2></div><button class="modal-close" aria-label="Fechar" value="cancel" formnovalidate>×</button></div>
+        <label>Nome<input name="name" required maxlength="48" placeholder="Ex.: Ídolo de Sangue"></label>
+        <div class="form-grid">
+          <label>Tipo<select name="kind"><option>Criatura</option><option>NPC</option><option>Aliado</option></select></label>
+          <label>PV máximo<input name="hpMax" type="number" min="1" step="1" value="10" required></label>
+          <label>DT<input name="dt" type="number" min="1" step="1" value="7" required></label>
+        </div>
+        <label>Notas<textarea name="notes" rows="3" maxlength="400" placeholder="Habilidades, fraquezas, motivação…"></textarea></label>
+        <div class="modal-actions"><button class="button button-outline" value="cancel" formnovalidate>Cancelar</button><button class="button button-primary" value="save">Adicionar</button></div>
+      </form>
+    </dialog>
+
+    <input type="file" id="import-campaign-input" accept="application/json,.json" hidden>
+    <input type="file" id="import-character-input" accept="application/json,.json" hidden>
     <script src="app.js"></script>
   </body>
 </html>
