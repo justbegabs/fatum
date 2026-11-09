@@ -34,7 +34,7 @@
           <button class="nav-item" data-view="master"><span class="nav-icon">◈</span> Ficha do mestre <span class="nav-count" id="threat-count">0</span></button>
         </nav>
 
-        <div class="nav-label">FICHAS DOS JOGADORES</div>
+        <div class="nav-label" id="agent-nav-label">FICHAS DOS JOGADORES</div>
         <div class="agent-nav" id="agent-nav" aria-label="Fichas dos jogadores"></div>
         <button class="add-agent-button" id="add-agent-button" type="button"><span>+</span> Nova ficha de jogador</button>
 
@@ -76,6 +76,7 @@
               <p class="page-subtitle">Perfil, atributos e perícias — do jeito de Ordem 2.</p>
             </div>
             <div class="page-heading-actions">
+              <button class="button button-outline" id="move-character-button" type="button" hidden><span>⇢</span> Levar para campanha</button>
               <button class="button button-outline" id="export-character-button" type="button"><span>⇩</span> Exportar ficha</button>
               <button class="button button-primary" id="edit-button"><span>✎</span> Editar personagem</button>
             </div>
@@ -199,8 +200,8 @@
 
           <section class="panel empty-sheet-panel" id="empty-sheet-panel" hidden>
             <span class="section-kicker">FICHAS DOS JOGADORES</span>
-            <h3>Nenhuma ficha nesta campanha</h3>
-            <p>Crie a ficha de um jogador ou importe uma ficha exportada por ele.</p>
+            <h3 id="empty-sheet-title">Nenhuma ficha nesta campanha</h3>
+            <p id="empty-sheet-text">Crie a ficha de um jogador ou importe uma ficha exportada por ele.</p>
             <div class="empty-sheet-actions">
               <button class="button button-outline" type="button" data-import-character><span>⇧</span> Importar ficha</button>
               <button class="button button-primary" type="button" data-new-agent><span>+</span> Nova ficha de jogador</button>
@@ -405,6 +406,15 @@
         </div>
         <label>Notas<textarea name="notes" rows="3" maxlength="400" placeholder="Habilidades, fraquezas, motivação…"></textarea></label>
         <div class="modal-actions"><button class="button button-outline" value="cancel" formnovalidate>Cancelar</button><button class="button button-primary" value="save">Adicionar</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="move-dialog" class="modal modal-small" aria-labelledby="move-dialog-title">
+      <form method="dialog" id="move-form">
+        <div class="modal-heading"><div><span class="section-kicker">MEUS PERSONAGENS</span><h2 id="move-dialog-title">Levar para uma campanha</h2></div><button class="modal-close" aria-label="Fechar" value="cancel" formnovalidate>×</button></div>
+        <label>Campanha<select name="campaign" id="move-campaign-select" required></select></label>
+        <p class="level-up-summary">O personagem sai de Meus personagens e passa a fazer parte da campanha, onde o mestre também pode ver e editar a ficha.</p>
+        <div class="modal-actions"><button class="button button-outline" value="cancel" formnovalidate>Cancelar</button><button class="button button-primary" value="save">Levar personagem</button></div>
       </form>
     </dialog>
 

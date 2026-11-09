@@ -39,7 +39,9 @@ let auth;
 let user = null;
 let ready = false;
 let campaignsLoaded = false;
+let personalLoaded = false;
 let stopCampaigns = null;
+let stopPersonal = null;
 let flushTimer = null;
 let flushing = null;
 let selectAfterJoin = null;
@@ -51,6 +53,7 @@ const pending = new Map();
 const campaignPath = (campaignId) => `campaigns/${campaignId}`;
 const isCampaignPath = (path) => path.split("/").length === 2;
 const campaignIdOf = (path) => path.split("/")[1];
+const personalPrefix = () => `users/${user.uid}/characters/`;
 const uiKey = () => `fatum-ordem2-cloud-ui-${user.uid}`;
 
 function stableStringify(value) {
@@ -87,15 +90,18 @@ function isOwnCampaign(campaignId) {
   return view(campaignPath(campaignId))?.ownerUid === user.uid;
 }
 
+function charactersUnder(entries, prefix) {
+  return entries
+    .filter(([childPath]) => childPath.startsWith(prefix))
+    .sort(([, a], [, b]) => String(a.createdAt ?? "").localeCompare(String(b.createdAt ?? "")))
+    .map(([childPath, child]) => ({ ...child, id: childPath.slice(prefix.length) }));
+}
+
 function buildStore() {
   const entries = viewEntries();
   const campaigns = entries.filter(([path]) => isCampaignPath(path)).map(([path, data]) => {
     const id = campaignIdOf(path);
-    const prefix = `${path}/characters/`;
-    const characters = entries
-      .filter(([childPath]) => childPath.startsWith(prefix))
-      .sort(([, a], [, b]) => String(a.createdAt ?? "").localeCompare(String(b.createdAt ?? "")))
-      .map(([childPath, child]) => ({ ...child, id: childPath.slice(prefix.length) }));
+    const characters = charactersUnder(entries, `${path}/characters/`);
     const campaign = fatum.normalizeCampaign({
       ...data,
       id,
@@ -107,8 +113,11 @@ function buildStore() {
     campaign.inviteCode = data.ownerUid === user.uid ? data.inviteCode ?? "" : "";
     return campaign;
   }).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const activeCampaignId = campaigns.some(({ id }) => id === ui.activeCampaignId) ? ui.activeCampaignId : campaigns[0]?.id;
-  return { activeCampaignId, campaigns };
+  const personal = fatum.createPersonalSpace(charactersUnder(entries, personalPrefix()), ui.activeCharacterIds[fatum.PERSONAL_ID]);
+  personal.role = "personal";
+  const all = [personal, ...campaigns];
+  const activeCampaignId = all.some(({ id }) => id === ui.activeCampaignId) ? ui.activeCampaignId : campaigns[0]?.id ?? personal.id;
+  return { activeCampaignId, campaigns: all };
 }
 
 function setStatus(message, failed = false) {
@@ -118,8 +127,8 @@ function setStatus(message, failed = false) {
 function publish() {
   if (!ready) return;
   const nextStore = buildStore();
-  if (!nextStore.campaigns.length) {
-    createFirstCampaigns();
+  if (!ui.migrationOffered && nextStore.campaigns.length === 1 && !nextStore.campaigns[0].characters.length) {
+    offerLocalUpload();
     return;
   }
   fatum.applyCloudStore(nextStore);
@@ -130,7 +139,7 @@ function publish() {
 }
 
 function checkReady() {
-  if (ready || !campaignsLoaded) return;
+  if (ready || !campaignsLoaded || !personalLoaded) return;
   if ([...campaignListeners.values()].some((listener) => listener.waiting > 0)) return;
   ready = true;
 }
@@ -140,16 +149,22 @@ function update() {
   publish();
 }
 
-function createFirstCampaigns() {
+function offerLocalUpload() {
+  ui.migrationOffered = true;
+  storeUi();
   const local = fatum.getLocalCampaigns();
-  const upload = local.length > 0 && confirm(
-    `Você tem ${local.length === 1 ? "1 campanha salva" : `${local.length} campanhas salvas`} neste navegador. Enviar para a sua conta Google?`
-  );
-  const campaigns = upload
-    ? local.map((campaign) => ({ ...campaign, id: fatum.createId("campaign") }))
-    : [fatum.normalizeCampaign({ name: "Minha campanha", masterName: user.displayName ?? "", characters: [] })];
-  ui.activeCampaignId = campaigns[0].id;
-  save({ activeCampaignId: campaigns[0].id, campaigns });
+  const personalCharacters = local.find(({ id }) => id === fatum.PERSONAL_ID)?.characters ?? [];
+  const campaigns = local.filter(({ id }) => id !== fatum.PERSONAL_ID);
+  const parts = [
+    campaigns.length && (campaigns.length === 1 ? "1 campanha" : `${campaigns.length} campanhas`),
+    personalCharacters.length && (personalCharacters.length === 1 ? "1 personagem sem campanha" : `${personalCharacters.length} personagens sem campanha`)
+  ].filter(Boolean);
+  if (parts.length && confirm(`Você tem ${parts.join(" e ")} neste navegador. Enviar para a sua conta Google?`)) {
+    const uploaded = campaigns.map((campaign) => ({ ...campaign, id: fatum.createId("campaign") }));
+    const activeCampaignId = uploaded[0]?.id ?? fatum.PERSONAL_ID;
+    ui.activeCampaignId = activeCampaignId;
+    save({ activeCampaignId, campaigns: [fatum.createPersonalSpace(personalCharacters), ...uploaded] });
+  }
   publish();
 }
 
@@ -214,6 +229,20 @@ function startSession() {
     ui = { activeCampaignId: null, activeCharacterIds: {} };
   }
   const campaignsQuery = query(collection(db, "campaigns"), where("memberUids", "array-contains", user.uid));
+  stopPersonal = onSnapshot(collection(db, "users", user.uid, "characters"), (snapshot) => {
+    const prefix = personalPrefix();
+    [...serverDocs.keys()].forEach((key) => {
+      if (key.startsWith(prefix)) serverDocs.delete(key);
+    });
+    snapshot.docs.forEach((entry) => serverDocs.set(`${prefix}${entry.id}`, entry.data()));
+    personalLoaded = true;
+    update();
+  }, (error) => {
+    console.error("Não foi possível carregar os personagens da nuvem.", error);
+    setStatus("Falha ao carregar da nuvem", true);
+    personalLoaded = true;
+    update();
+  });
   stopCampaigns = onSnapshot(campaignsQuery, { includeMetadataChanges: true }, (snapshot) => {
     if (!campaignsLoaded && snapshot.metadata.fromCache) return;
     const ids = new Set(snapshot.docs.map(({ id }) => id));
@@ -241,6 +270,9 @@ function startSession() {
 function stopSession() {
   stopCampaigns?.();
   stopCampaigns = null;
+  stopPersonal?.();
+  stopPersonal = null;
+  personalLoaded = false;
   [...campaignListeners.keys()].forEach(unsubscribeCampaign);
   clearTimeout(flushTimer);
   flushTimer = null;
@@ -253,9 +285,14 @@ function stopSession() {
 
 function persistUi(currentStore) {
   ui = {
+    ...ui,
     activeCampaignId: currentStore.activeCampaignId,
     activeCharacterIds: Object.fromEntries(currentStore.campaigns.map(({ id, activeCharacterId }) => [id, activeCharacterId]))
   };
+  storeUi();
+}
+
+function storeUi() {
   try {
     localStorage.setItem(uiKey(), JSON.stringify(ui));
   } catch (error) {
@@ -271,6 +308,10 @@ function save(currentStore) {
   const storeIds = new Set(currentStore.campaigns.map(({ id }) => id));
 
   viewEntries().forEach(([path, data]) => {
+    if (path.startsWith(personalPrefix())) {
+      managed.add(path);
+      return;
+    }
     const campaignId = campaignIdOf(path);
     const own = isOwnCampaign(campaignId);
     if (isCampaignPath(path)) {
@@ -284,6 +325,13 @@ function save(currentStore) {
 
   const now = new Date().toISOString();
   currentStore.campaigns.forEach((campaign) => {
+    if (campaign.id === fatum.PERSONAL_ID) {
+      campaign.characters.forEach(({ id, ...data }) => {
+        const characterPath = `${personalPrefix()}${id}`;
+        desired.set(characterPath, { ...data, createdAt: view(characterPath)?.createdAt ?? now });
+      });
+      return;
+    }
     const path = campaignPath(campaign.id);
     const existing = view(path);
     const own = !existing || existing.ownerUid === user.uid;
