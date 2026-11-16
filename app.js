@@ -676,13 +676,17 @@ function renderCampaignChrome() {
     ? "Crie um personagem agora, mesmo sem campanha. Quando entrar em uma campanha, use “Levar para campanha” na ficha."
     : "Crie a ficha de um jogador ou importe uma ficha exportada por ele.";
   byId("move-character-button").hidden = !personal;
+  const removeLabel = isMasterOf(campaign) ? "Excluir campanha" : "Sair da campanha";
+  byId("sidebar-delete-campaign").hidden = personal;
+  byId("sidebar-delete-campaign").title = removeLabel;
+  byId("sidebar-delete-campaign").setAttribute("aria-label", `${removeLabel} ${campaign.name}`);
   byId("breadcrumb-campaign").textContent = campaign.name;
   byId("threat-count").textContent = campaign.master.threats.length;
   byId("default-dt-value").textContent = campaign.defaultDt;
   byId("master-nav-label").hidden = !isMasterOf(campaign);
   byId("master-nav").hidden = !isMasterOf(campaign);
   byId("agent-nav").innerHTML = campaign.characters.map((agent) =>
-    `<button type="button" class="agent-nav-item" data-agent-id="${escapeHtml(agent.id)}"><span class="agent-avatar">${escapeHtml(initials(agent.name))}</span><span class="agent-nav-copy"><strong>${escapeHtml(agent.name)}</strong><small>${escapeHtml([agent.player, `${agent.profile} · Nv ${agent.level}`].filter(Boolean).join(" · "))}</small></span></button>`
+    `<div class="agent-nav-row"><button type="button" class="agent-nav-item" data-agent-id="${escapeHtml(agent.id)}"><span class="agent-avatar">${escapeHtml(initials(agent.name))}</span><span class="agent-nav-copy"><strong>${escapeHtml(agent.name)}</strong><small>${escapeHtml([agent.player, `${agent.profile} · Nv ${agent.level}`].filter(Boolean).join(" · "))}</small></span></button><button type="button" class="nav-remove" data-delete-agent="${escapeHtml(agent.id)}" aria-label="Excluir a ficha de ${escapeHtml(agent.name)}" title="Excluir ficha">×</button></div>`
   ).join("") || '<p class="agent-nav-empty">Nenhuma ficha ainda.</p>';
 }
 
@@ -1054,7 +1058,11 @@ byId("campaign-list").addEventListener("click", (event) => {
   }
   const remove = event.target.closest("[data-delete-campaign]");
   if (!remove) return;
-  const campaign = store.campaigns.find(({ id }) => id === remove.dataset.deleteCampaign);
+  removeCampaign(remove.dataset.deleteCampaign);
+});
+
+function removeCampaign(campaignId) {
+  const campaign = store.campaigns.find(({ id }) => id === campaignId);
   if (!campaign || isPersonal(campaign)) return;
   const question = isMasterOf(campaign)
     ? `Excluir a campanha "${campaign.name}" com todas as suas fichas? Esta ação não pode ser desfeita.`
@@ -1070,7 +1078,10 @@ byId("campaign-list").addEventListener("click", (event) => {
   saveStore();
   renderApp();
   renderCampaignList();
-});
+}
+
+byId("sidebar-delete-campaign").addEventListener("click", () => removeCampaign(store.activeCampaignId));
+byId("page-delete-campaign").addEventListener("click", () => removeCampaign(store.activeCampaignId));
 
 function openCampaignForm(mode) {
   const form = byId("campaign-form");
@@ -1250,6 +1261,11 @@ byId("add-agent-button").addEventListener("click", () => {
 });
 
 byId("agent-nav").addEventListener("click", (event) => {
+  const remove = event.target.closest("[data-delete-agent]");
+  if (remove) {
+    deleteCharacter(remove.dataset.deleteAgent);
+    return;
+  }
   const button = event.target.closest("[data-agent-id]");
   if (!button) return;
   selectAgent(button.dataset.agentId);
@@ -1316,16 +1332,21 @@ byId("move-form").addEventListener("submit", (event) => {
 
 byId("agent-form").elements.name.addEventListener("input", (event) => event.currentTarget.setCustomValidity(""));
 
-byId("delete-character").addEventListener("click", () => {
-  if (!character || !confirm(`Excluir a ficha de ${character.name}? Esta ação não pode ser desfeita.`)) return;
+function deleteCharacter(characterId) {
   const campaign = getActiveCampaign();
-  campaign.characters = campaign.characters.filter(({ id }) => id !== character.id);
-  campaign.activeCharacterId = campaign.characters[0]?.id ?? null;
+  const target = campaign.characters.find(({ id }) => id === characterId);
+  if (!target || !confirm(`Excluir a ficha de ${target.name}? Esta ação não pode ser desfeita.`)) return;
+  saveStore();
+  campaign.characters = campaign.characters.filter(({ id }) => id !== characterId);
+  if (campaign.activeCharacterId === characterId) campaign.activeCharacterId = campaign.characters[0]?.id ?? null;
+  if (character?.id === characterId) byId("character-dialog").close();
   syncActiveCharacter();
   saveStore();
-  byId("character-dialog").close();
   renderApp();
-});
+}
+
+byId("delete-character").addEventListener("click", () => character && deleteCharacter(character.id));
+byId("page-delete-character").addEventListener("click", () => character && deleteCharacter(character.id));
 
 byId("master-agent-list").addEventListener("click", (event) => {
   const open = event.target.closest("[data-open-agent]");

@@ -253,6 +253,19 @@ h1 { font-size: 28px; letter-spacing: -.8px; font-weight: 600; }
 .agent-nav-copy { display: grid; gap: 2px; min-width: 0; }
 .agent-nav-copy strong { font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agent-nav-copy small { font-size: 9px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agent-nav-row, .campaign-switcher-row { display: flex; align-items: center; gap: 4px; }
+.campaign-switcher-row { align-items: stretch; margin: 12px 0 22px; }
+.sidebar .campaign-switcher-row .campaign-switcher { flex: 1; min-width: 0; margin: 0; }
+.agent-nav-row .agent-nav-item { flex: 1; min-width: 0; }
+.nav-remove { flex: none; width: 24px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: #6f6f6f; font-size: 15px; cursor: pointer; }
+.agent-nav-row .nav-remove { height: 24px; opacity: 0; }
+.agent-nav-row:hover .nav-remove, .agent-nav-row .nav-remove:focus-visible { opacity: 1; }
+.campaign-switcher-row .nav-remove { border-color: var(--line); background: #181818; }
+.nav-remove:hover { border-color: #5b2e3c; color: #d48da3; background: #2a1820; }
+.nav-remove[hidden] { display: none; }
+@media (hover: none) { .agent-nav-row .nav-remove { opacity: 1; } }
+.button-danger-outline { border: 1px solid #5b2e3c; background: transparent; color: #d48da3; }
+.button-danger-outline:hover { background: #2a1820; }
 .agent-nav-empty { padding: 6px 9px; color: var(--muted); font-size: 10px; }
 .agent-avatar { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: #2c1f39; color: #c7aee1; font: 600 10px "Space Grotesk",sans-serif; }
 .add-agent-button { width: 100%; margin-top: 6px; padding: 7px 9px; border: 1px dashed #373737; border-radius: 4px; background: transparent; color: #9e9e9e; font-size: 10px; text-align: left; cursor: pointer; }
